@@ -38,7 +38,7 @@ const Sidebar = () => {
                 </CommandItem>
                 <CommandItem>
                     <Folders className="mr-2 h-4 w-4" />
-                    <Link href="/baran">Barang</Link>
+                    <Link href="/barang">Barang</Link>
                 </CommandItem>
                 <CommandItem>
                     <Folders className="mr-2 h-4 w-4" />
@@ -50,7 +50,7 @@ const Sidebar = () => {
                 </CommandItem>  
                 <CommandItem>
                     <Folders className="mr-2 h-4 w-4" />
-                    <Link href="/users">Pengguna</Link>
+                    <Link href="/Users">Pengguna</Link>
                 </CommandItem>
             </CommandGroup>
             <CommandSeparator />

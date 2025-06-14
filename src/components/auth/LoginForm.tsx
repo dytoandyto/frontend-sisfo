@@ -21,22 +21,23 @@ import {
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 const formSchema = z.object({
   email: z.string().min(1, {
     message: 'Email is required'
   }).email({
     message: 'Please enter a valid'
-
   }),
   password: z.string().min(1, {
     message: 'Password is required'
   })
 });
 
-
 const LoginForm = () => {
   const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -46,8 +47,32 @@ const LoginForm = () => {
     },
   });
 
-  const handleSubmit = (data: z.infer<typeof formSchema>) => {
-    router.push('/');
+  const handleSubmit = async (data: z.infer<typeof formSchema>) => {
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch("http://localhost:8000/api/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+      const result = await res.json();
+      if (res.ok && result.token) {
+        // Simpan token jika perlu
+        localStorage.setItem("token", result.token);
+        router.push('/');
+        console.log();
+        
+      } else {
+        setError(result.message || "Login gagal");
+      }
+    } catch (e) {
+      setError("Terjadi kesalahan jaringan");
+    }
+    setLoading(false);
   };
 
   return (
@@ -55,7 +80,7 @@ const LoginForm = () => {
       <CardHeader>
         <CardTitle>Login</CardTitle>
         <CardDescription>
-          Log into your account with your credentials
+          Masukan email dan Password dengan benar
         </CardDescription>
       </CardHeader>
       <CardContent className='space-y-2'>
@@ -105,13 +130,16 @@ const LoginForm = () => {
               )}
             />
 
-            <Button className='w-full'>Login</Button>
+            {error && <div className="text-red-500 text-sm">{error}</div>}
+
+            <Button className='w-full' disabled={loading}>
+              {loading ? "Logging in..." : "Login"}
+            </Button>
           </form>
         </Form>
       </CardContent>
     </Card>
   );
 };
-
 
 export default LoginForm;

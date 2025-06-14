@@ -1,4 +1,3 @@
-import { Categories } from '../types/categories';
 import CategoriesTable from '@/components/categories/CategoriesTable';
 import BackButton from '@/components/BackButton';
 

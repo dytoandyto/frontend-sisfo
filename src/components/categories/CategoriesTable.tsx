@@ -13,44 +13,43 @@ import { Categories } from "../../../types/categories";
 
 interface CategoriesTableProps {
     limit?: number;
-    name?: string;
+    name_category?: string;
 }
 
-const CategoriesTable = ({ limit, name }: CategoriesTableProps) => {
-    // mengurutkan data categoriess berdasarkan tanggal
-    const sortedcategories: Categories[] = [...categories].sort(
+const CategoriesTable = ({ limit, name_category }: CategoriesTableProps) => {
+    // Urutkan data categories berdasarkan tanggal
+    const sortedCategories: Categories[] = [...categories].sort(
         (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
     );
 
-    // Filter categoriess to limit
-    const filteredcategories = limit ? sortedcategories.slice(0, limit) : sortedcategories;
+    // Batasi jumlah categories jika ada limit
+    const filteredCategories = limit ? sortedCategories.slice(0, limit) : sortedCategories;
 
     return (
         <div className='mt-10'>
-            <h3 className='text-2xl mb-4 font-semibold'>{name ? name : 'categoriess'}</h3>
+            <h3 className='text-2xl mb-4 font-semibold'>{name_category ? name_category : 'Categories'}</h3>
             <Table>
                 <TableCaption>A list of Categories</TableCaption>
                 <TableHeader>
                     <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead className='hidden md:table-cell'></TableHead>
-                        <TableHead className='hidden md:table-cell text-right'>
-                            Date
-                        </TableHead>
+                        <TableHead>Name Category</TableHead>
+                        <TableHead className='hidden md:table-cell'>Description</TableHead>
+                        <TableHead className='hidden md:table-cell text-right'>Date</TableHead>
                         <TableHead>View</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {filteredcategories.map((categories) => (
-                        <TableRow key={categories.id}>
-                        <TableCell>{categories.name}</TableCell>
+                    {filteredCategories.map((category) => (
+                        <TableRow key={category.id}>
+                            <TableCell>{category.name_category}</TableCell>
                             <TableCell className='hidden md:table-cell'>
+                                {category.description}
                             </TableCell>
                             <TableCell className='text-right hidden md:table-cell'>
-                                {categories.date}
+                                {category.date}
                             </TableCell>
                             <TableCell>
-                                <Link href={`/categoriess/edit/${categories.id}`}>
+                                <Link href={`/categories/edit/${category.id}`}>
                                     <button className='bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded text-xs'>
                                         Edit
                                     </button>

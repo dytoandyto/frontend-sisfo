@@ -15,6 +15,7 @@
 
 export interface Categories {
     id: string;
-    name: string;
+    name_category: string;
+    description: string;
     date: string;
 }
