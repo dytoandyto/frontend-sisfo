@@ -14,7 +14,10 @@ import {
     Folders,
     CreditCard,
     User,
-    SettingsIcon
+    SettingsIcon,
+    HardDrive,
+    Package,
+    FolderSync
 } from "lucide-react"
 import Link from "next/link";
 
@@ -23,33 +26,29 @@ const Sidebar = () => {
         <CommandInput placeholder="Type a command or search..." />
         <CommandList className="overflow-visible ">
             <CommandEmpty>No results found.</CommandEmpty>
-            <CommandGroup heading="Suggestions">
+            <CommandGroup heading="Admin Sisfo ">
                 <CommandItem>
                     <LayoutDashboard className="mr-2 h-4 w-4" />
                     <Link href="/">Dashboard</Link>
-                </CommandItem>
-                <CommandItem>
-                    <Newspaper className="mr-2 h-4 w-4" />
-                    <Link href="/posts">Posts</Link>
                 </CommandItem>
                 <CommandItem>
                     <Folders className="mr-2 h-4 w-4" />
                     <Link href="/categories">Kategori</Link>
                 </CommandItem>
                 <CommandItem>
-                    <Folders className="mr-2 h-4 w-4" />
+                    <Package className="mr-2 h-4 w-4" />
                     <Link href="/barang">Barang</Link>
                 </CommandItem>
                 <CommandItem>
-                    <Folders className="mr-2 h-4 w-4" />
+                    <HardDrive className="mr-2 h-4 w-4" />
                     <Link href="/peminjaman">Peminjaman</Link>
                 </CommandItem>
                 <CommandItem>
-                    <Folders className="mr-2 h-4 w-4" />
+                    <FolderSync className="mr-2 h-4 w-4" />
                     <Link href="/pengembalian">Pengembalian</Link>
                 </CommandItem>  
                 <CommandItem>
-                    <Folders className="mr-2 h-4 w-4" />
+                    <User className="mr-2 h-4 w-4" />
                     <Link href="/Users">Pengguna</Link>
                 </CommandItem>
             </CommandGroup>
@@ -59,11 +58,6 @@ const Sidebar = () => {
                     <User className="mr-2 h-4 w-4" />
                     <span>Profile</span>
                     <CommandShortcut>ctrl + p</CommandShortcut>
-                </CommandItem>
-                <CommandItem>
-                    <CreditCard className="mr-2 h-4 w-4" />
-                    <span>Billing</span>
-                    <CommandShortcut>ctrl + b</CommandShortcut>
                 </CommandItem>
                 <CommandItem>
                     <SettingsIcon className="mr-2 h-4 w-4" />

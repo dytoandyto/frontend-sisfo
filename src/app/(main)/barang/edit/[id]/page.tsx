@@ -57,14 +57,32 @@ const PostItemsLayout = ({ params: { item_code } }: PostItemsLayoutProps) => {
         },
     });
 
-    const handleSubmit = (data: z.infer<typeof formSchema>) => {
-        // Lakukan update ke backend di sini jika sudah terhubung API
-        toast('Item has been updated successfully', { description: `Updated: ${data.item_name}` });
+    const handleSubmit = async (data: z.infer<typeof formSchema>) => {
+        const token = localStorage.getItem("token");
+        try {
+            const res = await fetch(`http://localhost:8000/api/admin/loans/edit/${item_code}`, {
+                method: "PUT",
+                headers: {
+                    "Accept": "application/json",
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`,
+                },
+                body: JSON.stringify(data),
+            });
+            const result = await res.json();
+            if (res.ok) {
+                toast.success('Item has been updated successfully', { description: `Updated: ${data.item_name}` });
+            } else {
+                toast.error(result.message || "Gagal update barang");
+            }
+        } catch {
+            toast.error("Terjadi kesalahan jaringan");
+        }
     };
 
     return (
         <>
-            <BackButton text='Back' link='/' />
+            <BackButton text='Back' link='/barang' />
             <h3 className='text-2xl mb-4'>Edit Item</h3>
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(handleSubmit)} className='space-y-8'>

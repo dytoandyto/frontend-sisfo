@@ -22,6 +22,8 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import Cookies from "js-cookie";
+
 
 const formSchema = z.object({
   email: z.string().min(1, {
@@ -61,14 +63,14 @@ const LoginForm = () => {
       });
       const result = await res.json();
       if (res.ok && result.token) {
-        // Simpan token jika perlu
         localStorage.setItem("token", result.token);
+        Cookies.set("token", result.token, { expires: 7 }); // token disimpan di cookie selama 7 hari
         router.push('/');
-        console.log();
-        
+        console.log(result.token); 
       } else {
         setError(result.message || "Login gagal");
       }
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
       setError("Terjadi kesalahan jaringan");
     }

@@ -1,6 +1,5 @@
 'use client'
 
-import React from "react";
 import BackButton from "@/components/BackButton";
 import * as z from 'zod';
 import { useForm } from 'react-hook-form';
@@ -15,41 +14,24 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import clients from "@data/users";
 import { toast } from 'sonner'
 
 const formSchema = z.object({
     name: z.string().min(1, { message: "Name is required" }),
     email: z.string().email({ message: "Invalid email" }),
-    password: z.string().min(6, { message: "Password min 6 karakter" }).optional(),
-    password_confirmation: z.string().min(6, { message: "Password confirmation min 6 karakter" }).optional(),
-}).refine((data) => {
-    // Jika password diisi, password_confirmation harus sama
-    if (data.password || data.password_confirmation) {
-        return data.password === data.password_confirmation;
-    }
-    return true;
-}, {
+    password: z.string().min(6, { message: "Password min 6 karakter" }),
+    password_confirmation: z.string().min(6, { message: "Password confirmation min 6 karakter" }),
+}).refine((data) => data.password === data.password_confirmation, {
     message: "Password confirmation does not match",
     path: ["password_confirmation"],
 });
 
-interface EditUserPageProps {
-    params: {
-        id: string;
-    }
-}
-
-const EditUserPage = ({ params }: EditUserPageProps) => {
-    // Gunakan React.use untuk unwrapping params (Next.js 14+)
-    const { id } = React.use(params);
-    const user = clients.find((u) => String(u.id) === id);
-
+const AddUserPage = () => {
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
-            name: user?.name || '',
-            email: user?.email || '',
+            name: '',
+            email: '',
             password: '',
             password_confirmation: '',
         },
@@ -57,49 +39,38 @@ const EditUserPage = ({ params }: EditUserPageProps) => {
 
     const handleSubmit = async (data: z.infer<typeof formSchema>) => {
         const token = localStorage.getItem("token");
-        // Hanya kirim password jika diisi
-        const bodyData: any = {
-            name: data.name,
-            email: data.email,
-        };
-        if (data.password) {
-            bodyData.password = data.password;
-            bodyData.password_confirmation = data.password_confirmation;
-        }
         try {
-            const res = await fetch(`http://localhost:8000/api/admin/users/edit/${id}`, {
-                method: "PUT",
+            const res = await fetch("http://localhost:8000/api/admin/register", {
+                method: "POST",
                 headers: {
                     "Accept": "application/json",
                     "Content-Type": "application/json",
                     "Authorization": `Bearer ${token}`,
                 },
-                body: JSON.stringify(bodyData),
+                body: JSON.stringify({ 
+                    name: data.name,
+                    email: data.email,
+                    password: data.password,
+                    password_confirmation: data.password_confirmation,
+                    role: "user"
+                }),
             });
             const result = await res.json();
             if (res.ok) {
-                toast.success('User has been updated successfully', { description: `Updated: ${data.name}` });
+                toast.success('User has been added successfully', { description: `Added: ${data.name}` });
+                form.reset();
             } else {
-                toast.error(result.message || "Gagal update user");
+                toast.error(result.message || "Gagal menambah user");
             }
-        } catch {
+        } catch (e) {
             toast.error("Terjadi kesalahan jaringan");
         }
     };
 
-    if (!user) {
-        return (
-            <>
-                <BackButton text='Back To Users' link='/Users' />
-                <div className="text-center text-red-500 mt-10">User not found.</div>
-            </>
-        );
-    }
-
     return (
         <>
             <BackButton text='Back To Users' link='/Users' />
-            <h3 className="text-2xl mb-4">Edit User</h3>
+            <h3 className="text-2xl mb-4">Add New User</h3>
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(handleSubmit)} className='space-y-8'>
                     <FormField
@@ -133,9 +104,9 @@ const EditUserPage = ({ params }: EditUserPageProps) => {
                         name='password'
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Password (Opsional)</FormLabel>
+                                <FormLabel>Password</FormLabel>
                                 <FormControl>
-                                    <Input type="password" placeholder='Enter New Password' {...field} />
+                                    <Input type="password" placeholder='Enter Password' {...field} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -146,16 +117,16 @@ const EditUserPage = ({ params }: EditUserPageProps) => {
                         name='password_confirmation'
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Password Confirmation (Opsional)</FormLabel>
+                                <FormLabel>Password Confirmation</FormLabel>
                                 <FormControl>
-                                    <Input type="password" placeholder='Confirm New Password' {...field} />
+                                    <Input type="password" placeholder='Confirm Password' {...field} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
                         )}
                     />
-                    <Button className='w-full dark:bg-slate-800 dark:text-white'>
-                        Update User
+                    <Button type="submit" className='w-full dark:bg-slate-800 dark:text-white'>
+                        Add User
                     </Button>
                 </form>
             </Form>
@@ -163,4 +134,4 @@ const EditUserPage = ({ params }: EditUserPageProps) => {
     );
 };
 
-export default EditUserPage;
+export default AddUserPage;
