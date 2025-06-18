@@ -1,43 +1,26 @@
 'use client'
 
-import React from "react";
-import BackButton from "@/components/BackButton";
-import * as z from 'zod';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod'
-import {
-    Form,
-    FormControl,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormMessage
-} from '@/components/ui/form'
-import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
-import { Textarea } from "@/components/ui/textarea";
-import { toast } from 'sonner'
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { useEffect, useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
+import { toast } from 'sonner';
 
 const formSchema = z.object({
-    name_category: z.string().min(1, {
-        message: 'Category Name is required'
-    }),
-    description: z.string().min(1, {
-        message: 'Description is required'
-    }),
+    name_category: z.string().min(1, { message: 'Nama kategori wajib diisi' }),
+    description: z.string().optional(),
 });
 
-interface CategoriesEditPageProps {
-    params: {
-        id: string;
-    }
-}
+const EditCategoryPage = () => {
+    const params = useParams();
+    const router = useRouter();
+    const id = params?.id as string;
+    const [loading, setLoading] = useState(true);
 
-const CategoriesEditPage = ({ params }: CategoriesEditPageProps) => {
-    const { id } = React.use(params);
-    const [loading, setLoading] = React.useState(true);
-
-    // Inisialisasi form sebelum useEffect
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
@@ -46,8 +29,8 @@ const CategoriesEditPage = ({ params }: CategoriesEditPageProps) => {
         },
     });
 
-    // Ambil data kategori dari backend dan set ke form
-    React.useEffect(() => {
+    useEffect(() => {
+        if (!id) return;
         const fetchCategory = async () => {
             setLoading(true);
             const token = localStorage.getItem("token");
@@ -58,14 +41,15 @@ const CategoriesEditPage = ({ params }: CategoriesEditPageProps) => {
                         "Authorization": `Bearer ${token}`,
                     },
                 });
-                if (!res.ok) throw new Error("Not found");
-                const data = await res.json();
+                if (!res.ok) throw new Error("Gagal mengambil data kategori");
+                const result = await res.json();
                 form.reset({
-                    name_category: data.name_category,
-                    description: data.description,
+                    name_category: result.data.name_category,
+                    description: result.data.description || '',
                 });
             } catch {
-                toast.error("Kategori tidak ditemukan");
+                toast.error("Gagal mengambil data kategori");
+                router.push("/categories");
             } finally {
                 setLoading(false);
             }
@@ -74,25 +58,22 @@ const CategoriesEditPage = ({ params }: CategoriesEditPageProps) => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [id]);
 
-    // PUT /api/admin/categories/edit/{id}
     const handleSubmit = async (data: z.infer<typeof formSchema>) => {
         const token = localStorage.getItem("token");
         try {
             const res = await fetch(`http://localhost:8000/api/admin/categories/edit/${id}`, {
-                method: "PUT",
+                method: "Put",
                 headers: {
+                    "Authorization": `Bearer ${token}`,
                     "Accept": "application/json",
                     "Content-Type": "application/json",
-                    "Authorization": `Bearer ${token}`,
                 },
-                body: JSON.stringify({
-                    name_category: data.name_category,
-                    description: data.description,
-                }),
+                body: JSON.stringify(data),
             });
             const result = await res.json();
             if (res.ok) {
-                toast.success('Category has been updated successfully', { description: `Updated: ${data.name_category}` });
+                toast.success('Kategori berhasil diupdate');
+                router.push("/categories");
             } else {
                 toast.error(result.message || "Gagal update kategori");
             }
@@ -101,19 +82,11 @@ const CategoriesEditPage = ({ params }: CategoriesEditPageProps) => {
         }
     };
 
-    if (loading) {
-        return (
-            <>
-                <BackButton text='Back' link='/categories' />
-                <div className="text-center mt-10">Loading...</div>
-            </>
-        );
-    }
+    if (loading) return <div className="p-8">Loading...</div>;
 
     return (
-        <>
-            <BackButton text='Back' link='/categories' />
-            <h3 className='text-2xl mb-4'>Edit Category</h3>
+        <div>
+            <h3 className='text-2xl mb-4'>Edit Kategori</h3>
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(handleSubmit)} className='space-y-8'>
                     <FormField
@@ -121,48 +94,32 @@ const CategoriesEditPage = ({ params }: CategoriesEditPageProps) => {
                         name='name_category'
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel className='uppercase text-xs font-bold text-zinc-500 dark:text-white'>
-                                    Category Name
-                                </FormLabel>
+                                <FormLabel>Nama Kategori</FormLabel>
                                 <FormControl>
-                                    <Input
-                                        className='bg-slate-100 dark:bg-slate-500 border-0 focus-visible:ring-0 text-black dark:text-white focus-visible:ring-offset-0'
-                                        placeholder='Enter Category Name'
-                                        {...field}
-                                    />
+                                    <Input placeholder='Nama Kategori' {...field} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
                         )}
                     />
-
                     <FormField
                         control={form.control}
                         name='description'
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel className='uppercase text-xs font-bold text-zinc-500 dark:text-white'>
-                                    Description
-                                </FormLabel>
+                                <FormLabel>Deskripsi</FormLabel>
                                 <FormControl>
-                                    <Textarea
-                                        className='bg-slate-100 dark:bg-slate-500 border-0 focus-visible:ring-0 text-black dark:text-white focus-visible:ring-offset-0'
-                                        placeholder='Enter Description'
-                                        {...field}
-                                    />
+                                    <Input placeholder='Deskripsi' {...field} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
                         )}
                     />
-
-                    <Button className='w-full dark:bg-slate-800 dark:text-white'>
-                        Update Category
-                    </Button>
+                    <Button className='w-full'>Update Kategori</Button>
                 </form>
             </Form>
-        </>
+        </div>
     );
 };
 
-export default CategoriesEditPage;
+export default EditCategoryPage;

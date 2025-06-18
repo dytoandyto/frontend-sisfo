@@ -109,8 +109,7 @@ const CategoriesTable = ({ limit, name_category }: CategoriesTableProps) => {
                     <TableRow>
                         <TableHead>Name Category</TableHead>
                         <TableHead className='hidden md:table-cell'>Description</TableHead>
-                        <TableHead className='hidden md:table-cell text-right'>Date</TableHead>
-                        <TableHead>View</TableHead>
+                        <TableHead>Action</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -128,9 +127,6 @@ const CategoriesTable = ({ limit, name_category }: CategoriesTableProps) => {
                                 <TableCell>{category.name_category}</TableCell>
                                 <TableCell className='hidden md:table-cell'>
                                     {category.description}
-                                </TableCell>
-                                <TableCell className='text-right hidden md:table-cell'>
-                                    {category.date}
                                 </TableCell>
                                 <TableCell>
                                     <div className="flex gap-2">

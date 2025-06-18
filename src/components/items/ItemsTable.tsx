@@ -112,8 +112,6 @@ const ItemsTable = ({ limit, category }: ItemsTableProps) => {
             "Item Brand": item.item_brand,
             "Category": item.item_category,
             "Quantity": item.quantity,
-            "Created At": item.created_at,
-            "Updated At": item.updated_at,
         }));
         const worksheet = XLSX.utils.json_to_sheet(exportData);
         const workbook = XLSX.utils.book_new();

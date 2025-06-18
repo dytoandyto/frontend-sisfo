@@ -1,84 +1,80 @@
 'use client'
 
-import React from "react";
-import BackButton from "@/components/BackButton";
-import * as z from 'zod';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod'
-import {
-    Form,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
-    FormControl,
-} from '@/components/ui/form'
-import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
-import clients from "@data/users";
-import { toast } from 'sonner'
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { useEffect, useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
+import { toast } from 'sonner';
 
 const formSchema = z.object({
-    name: z.string().min(1, { message: "Name is required" }),
-    email: z.string().email({ message: "Invalid email" }),
-    password: z.string().min(6, { message: "Password min 6 karakter" }).optional(),
-    password_confirmation: z.string().min(6, { message: "Password confirmation min 6 karakter" }).optional(),
-}).refine((data) => {
-    // Jika password diisi, password_confirmation harus sama
-    if (data.password || data.password_confirmation) {
-        return data.password === data.password_confirmation;
-    }
-    return true;
-}, {
-    message: "Password confirmation does not match",
-    path: ["password_confirmation"],
+    name: z.string().min(1, { message: 'Nama wajib diisi' }),
+    email: z.string().email({ message: 'Email tidak valid' }),
+    password: z.string().optional(),
 });
 
-interface EditUserPageProps {
-    params: {
-        id: string;
-    }
-}
-
-const EditUserPage = ({ params }: EditUserPageProps) => {
-    // Gunakan React.use untuk unwrapping params (Next.js 14+)
-    const { id } = React.use(params);
-    const user = clients.find((u) => String(u.id) === id);
+const EditUserPage = () => {
+    const params = useParams();
+    const router = useRouter();
+    const id = params?.id as string;
+    const [loading, setLoading] = useState(true);
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
-            name: user?.name || '',
-            email: user?.email || '',
-            password: '',
-            password_confirmation: '',
+            name: '',
+            email: '',
         },
     });
 
+    useEffect(() => {
+        if (!id) return;
+        const fetchUser = async () => {
+            setLoading(true);
+            const token = localStorage.getItem("token");
+            try {
+                const res = await fetch(`http://127.0.0.1:8000/api/admin/users/${id}`, {
+                    headers: {
+                        "Accept": "application/json",
+                        "Authorization": `Bearer ${token}`,
+                    },
+                });
+                if (!res.ok) throw new Error("Gagal mengambil data user");
+                const result = await res.json();
+                form.reset({
+                    name: result.user.name,
+                    email: result.user.email,
+                });
+            } catch {
+                toast.error("Gagal mengambil data user");
+                router.push("/Users");
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchUser();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [id]);
+
     const handleSubmit = async (data: z.infer<typeof formSchema>) => {
         const token = localStorage.getItem("token");
-        // Hanya kirim password jika diisi
-        const bodyData: any = {
-            name: data.name,
-            email: data.email,
-        };
-        if (data.password) {
-            bodyData.password = data.password;
-            bodyData.password_confirmation = data.password_confirmation;
-        }
         try {
             const res = await fetch(`http://localhost:8000/api/admin/users/edit/${id}`, {
-                method: "PUT",
+                method: "Put",
                 headers: {
+                    "Authorization": `Bearer ${token}`,
                     "Accept": "application/json",
                     "Content-Type": "application/json",
-                    "Authorization": `Bearer ${token}`,
                 },
-                body: JSON.stringify(bodyData),
+                body: JSON.stringify(data),
             });
             const result = await res.json();
             if (res.ok) {
-                toast.success('User has been updated successfully', { description: `Updated: ${data.name}` });
+                toast.success('User berhasil diupdate');
+                router.push("/Users");
             } else {
                 toast.error(result.message || "Gagal update user");
             }
@@ -87,19 +83,11 @@ const EditUserPage = ({ params }: EditUserPageProps) => {
         }
     };
 
-    if (!user) {
-        return (
-            <>
-                <BackButton text='Back To Users' link='/Users' />
-                <div className="text-center text-red-500 mt-10">User not found.</div>
-            </>
-        );
-    }
+    if (loading) return <div className="p-8">Loading...</div>;
 
     return (
-        <>
-            <BackButton text='Back To Users' link='/Users' />
-            <h3 className="text-2xl mb-4">Edit User</h3>
+        <div>
+            <h3 className='text-2xl mb-4'>Edit User</h3>
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(handleSubmit)} className='space-y-8'>
                     <FormField
@@ -107,9 +95,9 @@ const EditUserPage = ({ params }: EditUserPageProps) => {
                         name='name'
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Name</FormLabel>
+                                <FormLabel>Nama</FormLabel>
                                 <FormControl>
-                                    <Input placeholder='Enter Name' {...field} />
+                                    <Input placeholder='Nama' {...field} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -122,7 +110,7 @@ const EditUserPage = ({ params }: EditUserPageProps) => {
                             <FormItem>
                                 <FormLabel>Email</FormLabel>
                                 <FormControl>
-                                    <Input placeholder='Enter Email' {...field} />
+                                    <Input placeholder='Email' {...field} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -135,31 +123,20 @@ const EditUserPage = ({ params }: EditUserPageProps) => {
                             <FormItem>
                                 <FormLabel>Password (Opsional)</FormLabel>
                                 <FormControl>
-                                    <Input type="password" placeholder='Enter New Password' {...field} />
+                                    <Input
+                                        type="password"
+                                        placeholder='Kosongkan jika tidak ingin mengubah password'
+                                        {...field}
+                                    />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
                         )}
                     />
-                    <FormField
-                        control={form.control}
-                        name='password_confirmation'
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Password Confirmation (Opsional)</FormLabel>
-                                <FormControl>
-                                    <Input type="password" placeholder='Confirm New Password' {...field} />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                    <Button className='w-full dark:bg-slate-800 dark:text-white'>
-                        Update User
-                    </Button>
+                    <Button className='w-full'>Update User</Button>
                 </form>
             </Form>
-        </>
+        </div>
     );
 };
 
