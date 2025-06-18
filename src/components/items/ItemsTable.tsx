@@ -12,6 +12,8 @@ import {
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { toast } from 'sonner'
+import * as XLSX from "xlsx";
+// import { saveAs } from "file-saver";
 
 interface Item {
     id: number;
@@ -21,12 +23,13 @@ interface Item {
     image: string;
     item_category: string;
     quantity: number;
-    createdAt: string;
+    created_at: string; // ubah ke snake_case sesuai response baru
+    updated_at: string;
 }
 
 interface ItemsTableProps {
     limit?: number;
-    category?: string;
+    category?: number;
 }
 
 const ItemsTable = ({ limit, category }: ItemsTableProps) => {
@@ -46,13 +49,13 @@ const ItemsTable = ({ limit, category }: ItemsTableProps) => {
                     },
                 });
                 const data = await res.json();
-                let filtered = data;
+                let filtered = data.data; // ambil dari data.data sesuai response baru
                 if (category) {
-                    filtered = filtered.filter((item: Item) => item.item_category === category);
+                    filtered = filtered.filter((item: Item) => item.item_category === String(category));
                 }
                 // Urutkan dari terbaru ke terlama
                 filtered = filtered.sort(
-                    (a: Item, b: Item) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+                    (a: Item, b: Item) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
                 );
                 setItems(limit ? filtered.slice(0, limit) : filtered);
             } catch {
@@ -100,15 +103,55 @@ const ItemsTable = ({ limit, category }: ItemsTableProps) => {
         );
     };
 
+    // Export ke Excel
+    const handleExportExcel = () => {
+        const exportData = items.map(item => ({
+            ID: item.id,
+            "Item Code": item.item_code,
+            "Item Name": item.item_name,
+            "Item Brand": item.item_brand,
+            "Category": item.item_category,
+            "Quantity": item.quantity,
+            "Created At": item.created_at,
+            "Updated At": item.updated_at,
+        }));
+        const worksheet = XLSX.utils.json_to_sheet(exportData);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Items");
+        const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
+        const blob = new Blob([excelBuffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+
+        // Buat link download manual
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "daftar_barang.xlsx";
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }, 0);
+    };
+
     return (
         <div className="mt-10">
             <div className="flex justify-between items-center mb-4">
                 <h3 className="text-2xl mb-4 font-semibold">{items.length > 0 ? "Daftar Barang" : "No Items"}</h3>
-                <Link href="/barang/add">
-                    <button className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded text-xs">
-                        + Tambahkan barang baru
+                <div className="flex gap-2">
+                    <button
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded text-xs"
+                        onClick={handleExportExcel}
+                        disabled={items.length === 0}
+                    >
+                        Export Excel
                     </button>
-                </Link>
+                    <Link href="/barang/add">
+                        <button className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded text-xs">
+                            + Tambahkan barang baru
+                        </button>
+                    </Link>
+                </div>
             </div>
             <Table>
                 <TableCaption>A list of Items</TableCaption>
@@ -121,7 +164,7 @@ const ItemsTable = ({ limit, category }: ItemsTableProps) => {
                         <TableHead className="hidden md:table-cell">Brand</TableHead>
                         <TableHead className="hidden md:table-cell">Category</TableHead>
                         <TableHead className="hidden md:table-cell">Quantity</TableHead>
-                        <TableHead>A</TableHead>
+                        <TableHead>Action</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -147,7 +190,7 @@ const ItemsTable = ({ limit, category }: ItemsTableProps) => {
                                     ) : (
                                         <span className="text-zinc-400 italic">Tidak ada gambar</span>
                                     )}
-                                </TableCell>    
+                                </TableCell>
                                 <TableCell>{item.item_code}</TableCell>
                                 <TableCell className="hidden md:table-cell">
                                     {item.item_name}

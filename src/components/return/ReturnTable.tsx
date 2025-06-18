@@ -11,6 +11,8 @@ import {
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { toast } from 'sonner';
+import * as XLSX from "xlsx";
+
 
 interface ReturnItem {
     id: number;
@@ -51,15 +53,53 @@ const ReturnTable = () => {
         fetchReturns();
     }, []);
 
+    // Export ke Excel
+    const handleExportExcel = () => {
+        const exportData = returns.map((ret, idx) => ({
+            No: idx + 1,
+            "Nama Peminjam": ret.user?.name || '-',
+            "Nama Barang": ret.item?.item_name || '-',
+            "Tanggal Pengembalian": ret.date_returned || '-',
+            "Status": ret.condition,
+            "Notes": ret.notes || '-',
+        }));
+        const worksheet = XLSX.utils.json_to_sheet(exportData);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Pengembalian");
+        const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
+        const blob = new Blob([excelBuffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+
+        // Buat link download manual
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "daftar_pengembalian.xlsx";
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }, 0);
+    };
+
     return (
         <div className="mt-10">
             <div className="flex justify-between items-center mb-4">
                 <h3 className="text-2xl mb-4 font-semibold">Daftar Pengembalian</h3>
-                <Link href="/pengembalian/add">
-                    <button className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded text-xs">
-                        + Tambahkan Pengembalian
+                <div className="flex gap-2">
+                    <button
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded text-xs"
+                        onClick={handleExportExcel}
+                        disabled={returns.length === 0}
+                    >
+                        Export Excel
                     </button>
-                </Link>
+                    <Link href="/pengembalian/add">
+                        <button className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded text-xs">
+                            + Tambahkan Pengembalian
+                        </button>
+                    </Link>
+                </div>
             </div>
             <Table>
                 <TableCaption>Daftar Pengembalian Barang</TableCaption>
