@@ -17,9 +17,7 @@ import { Button } from '@/components/ui/button'
 import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from 'sonner'
-import categories from "@data/categories";
 import React from "react";
-
 
 const formSchema = z.object({
     item_code: z.string().min(1, { message: 'Item code is required' }),
@@ -53,43 +51,6 @@ const EditItemPage = () => {
         },
     });
 
-    // Ambil data barang dari backend
-    useEffect(() => {
-        if (!id) return;
-        const fetchItem = async () => {
-            setLoading(true);
-            const token = localStorage.getItem("token");
-            try {
-                const res = await fetch(`http://localhost:8000/api/admin/units/${id}`, {
-                    headers: {
-                        "Accept": "application/json",
-                        "Authorization": `Bearer ${token}`,
-                    },
-                });
-                if (!res.ok) throw new Error("Gagal mengambil data barang");
-                const result = await res.json();
-                const data = result.data;
-                form.reset({
-                    item_code: data.item_code,
-                    item_name: data.item_name,
-                    item_brand: data.item_brand,
-                    item_category: data.item_category,
-                    quantity: data.quantity,
-                    image: undefined,
-                });
-                setOldImage(data.image);
-                setPreview(data.image);
-            } catch {
-                toast.error("Gagal mengambil data barang");
-                router.push("/barang");
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchItem();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [id]);
-
     // Ambil kategori dari backend
     React.useEffect(() => {
         const fetchCategories = async () => {
@@ -113,6 +74,50 @@ const EditItemPage = () => {
         fetchCategories();
     }, []);
 
+    // Ambil data barang dari backend (setelah kategori didapat)
+    useEffect(() => {
+        if (!id || loadingCategories) return;
+        const fetchItem = async () => {
+            setLoading(true);
+            const token = localStorage.getItem("token");
+            try {
+                const res = await fetch(`http://localhost:8000/api/admin/units/${id}`, {
+                    headers: {
+                        "Accept": "application/json",
+                        "Authorization": `Bearer ${token}`,
+                    },
+                });
+                if (!res.ok) throw new Error("Gagal mengambil data barang");
+                const result = await res.json();
+                const data = result.data;
+
+                // Jika item_category dari backend adalah nama, mapping ke ID
+                let categoryId = data.item_category;
+                if (isNaN(Number(data.item_category))) {
+                    categoryId = categories.find(cat => cat.name_category === data.item_category)?.id ?? '';
+                }
+
+                form.reset({
+                    item_code: data.item_code,
+                    item_name: data.item_name,
+                    item_brand: data.item_brand,
+                    item_category: String(categoryId),
+                    quantity: data.quantity,
+                    image: undefined,
+                });
+                setOldImage(data.image);
+                setPreview(data.image);
+            } catch {
+                toast.error("Gagal mengambil data barang");
+                router.push("/barang");
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchItem();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [id, loadingCategories]);
+
     // Preview gambar baru
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -128,15 +133,16 @@ const EditItemPage = () => {
         formData.append("item_code", data.item_code);
         formData.append("item_name", data.item_name);
         formData.append("item_brand", data.item_brand);
-        formData.append("item_category", data.item_category);
+        formData.append("item_category", data.item_category); // sudah ID
         formData.append("quantity", String(data.quantity));
         if (data.image instanceof File) {
             formData.append("image", data.image);
         }
         try {
             const res = await fetch(`http://localhost:8000/api/admin/units/edit/${id}`, {
-                method: "POST", // atau "PUT" sesuai backend Anda
+                method: "POST",
                 headers: {
+                    "Accept": "application/json",
                     "Authorization": `Bearer ${token}`,
                 },
                 body: formData,
@@ -249,21 +255,19 @@ const EditItemPage = () => {
 
                     <FormField
                         control={form.control}
-                        name="item_category"
+                        name='item_category'
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Item Category</FormLabel>
+                                <FormLabel>Kategori</FormLabel>
                                 <FormControl>
                                     <select
-                                        className="bg-slate-100 dark:bg-slate-500 border-0 rounded w-full py-2 px-3"
-                                        disabled={loadingCategories}
-                                        value={field.value || ""}
-                                        onChange={e => field.onChange(Number(e.target.value))}
+                                        {...field}
+                                        value={field.value || ''}
+                                        onChange={e => field.onChange(e.target.value)}
+                                        className='bg-slate-100 dark:bg-slate-500 text-black dark:text-white rounded px-3 py-2'
                                     >
-                                        <option value="" disabled>
-                                            {loadingCategories ? "Loading..." : "Pilih Kategori"}
-                                        </option>
-                                        {categories.map(cat => (
+                                        <option value="" disabled>Pilih Kategori</option>
+                                        {categories.map((cat) => (
                                             <option key={cat.id} value={cat.id}>
                                                 {cat.name_category}
                                             </option>
